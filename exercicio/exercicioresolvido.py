@@ -8,7 +8,7 @@ cursor = conexao.cursor()
 cursor.execute(
     """
     CREATE TABLE autores (
-        autor_id INT PRIMARY KEY,
+        autor_id INTEGER PRIMARY KEY AUTOINCREMENT,
         nome VARCHAR(255) NOT NULL
     )
 """
@@ -18,7 +18,7 @@ cursor.execute(
 cursor.execute(
     """
     CREATE TABLE editoras (
-        editora_id INT PRIMARY KEY,
+        editora_id INTEGER PRIMARY KEY AUTOINCREMENT,
         nome VARCHAR(255) NOT NULL,
         endereco VARCHAR(255)
     )
@@ -29,11 +29,11 @@ cursor.execute(
 cursor.execute(
     """
     CREATE TABLE livros (
-        livro_id INT PRIMARY KEY,
+        livro_id INTEGER PRIMARY KEY AUTOINCREMENT,
         titulo VARCHAR(255) NOT NULL,
-        autor_id INT,
-        editora_id INT,
-        ano_publicacao INT,
+        autor_id INTEGER,
+        editora_id INTEGER,
+        ano_publicacao INTEGER,
         genero VARCHAR(50),
         FOREIGN KEY (autor_id) REFERENCES autores(autor_id),
         FOREIGN KEY (editora_id) REFERENCES editoras(editora_id)
@@ -45,7 +45,7 @@ cursor.execute(
 cursor.execute(
     """
     CREATE TABLE usuarios (
-        usuario_id INT PRIMARY KEY,
+        usuario_id INTEGER PRIMARY KEY AUTOINCREMENT,
         nome VARCHAR(255) NOT NULL,
         email VARCHAR(255) UNIQUE
     )
@@ -56,9 +56,9 @@ cursor.execute(
 cursor.execute(
     """
     CREATE TABLE emprestimos (
-        emprestimo_id INT PRIMARY KEY,
-        livro_id INT,
-        usuario_id INT,
+        emprestimo_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        livro_id INTEGER,
+        usuario_id INTEGER,
         data_emprestimo DATE NOT NULL,
         data_devolucao DATE,
         FOREIGN KEY (livro_id) REFERENCES livros(livro_id),
@@ -69,6 +69,7 @@ cursor.execute(
 
 # Salvar (commit) as mudanças
 conexao.commit()
+
 
 # Fechar a conexão
 conexao.close()

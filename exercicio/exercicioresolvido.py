@@ -7,7 +7,7 @@ cursor = conexao.cursor()
 # Criar tabela autores
 cursor.execute(
     """
-    CREATE TABLE autores (
+    CREATE TABLE IF NOT EXISTS autores (
         autor_id INTEGER PRIMARY KEY AUTOINCREMENT,
         nome VARCHAR(255) NOT NULL
     )
@@ -17,7 +17,7 @@ cursor.execute(
 # Criar tabela editoras
 cursor.execute(
     """
-    CREATE TABLE editoras (
+    CREATE TABLE IF NOT EXISTS editoras (
         editora_id INTEGER PRIMARY KEY AUTOINCREMENT,
         nome VARCHAR(255) NOT NULL,
         endereco VARCHAR(255)
@@ -28,7 +28,7 @@ cursor.execute(
 # Criar tabela livros
 cursor.execute(
     """
-    CREATE TABLE livros (
+    CREATE TABLE IF NOT EXISTS  livros (
         livro_id INTEGER PRIMARY KEY AUTOINCREMENT,
         titulo VARCHAR(255) NOT NULL,
         autor_id INTEGER,
@@ -44,7 +44,7 @@ cursor.execute(
 # Criar tabela usuarios
 cursor.execute(
     """
-    CREATE TABLE usuarios (
+    CREATE TABLE IF NOT EXISTS  usuarios (
         usuario_id INTEGER PRIMARY KEY AUTOINCREMENT,
         nome VARCHAR(255) NOT NULL,
         email VARCHAR(255) UNIQUE
@@ -55,7 +55,7 @@ cursor.execute(
 # Criar tabela emprestimos
 cursor.execute(
     """
-    CREATE TABLE emprestimos (
+    CREATE TABLE IF NOT EXISTS  emprestimos (
         emprestimo_id INTEGER PRIMARY KEY AUTOINCREMENT,
         livro_id INTEGER,
         usuario_id INTEGER,
@@ -69,7 +69,6 @@ cursor.execute(
 
 # Salvar (commit) as mudanças
 conexao.commit()
-
 
 # Fechar a conexão
 conexao.close()

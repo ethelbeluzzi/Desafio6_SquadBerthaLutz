@@ -67,7 +67,19 @@ cursor.execute(
 """
 )
 # Alteração de tabela livros para adicionar coluna exemplares
-cursor.execute("ALTER TABLE livros ADD exemplares INTEGER")
+cursor.execute("ALTER TABLE livros ADD exemplares INTEGER DEFAULT 1")
+
+# Cria um gatilho para alterar o valor de exemplares (executar apenas uma vez)
+cursor.execute("""
+    CREATE TRIGGER atualizar_exemplares
+    AFTER INSERT ON emprestimos
+    FOR EACH ROW
+    BEGIN
+        UPDATE livros
+        SET exemplares = exemplares - 1
+        WHERE livro_id = NEW.livro_id;
+    END;
+""")
 
 # Alteração da tabela empréstimos para alterar datas de empréstimo e devolução
 cursor.execute("ALTER TABLE emprestimos ADD vencimento_emprestimo")
@@ -143,21 +155,21 @@ cursor.executemany("INSERT INTO usuarios (nome, email) VALUES (?, ?)", usuarios)
 
 
 emprestimos = [
-    (1, 1, "2024-08-01", None),  # Livro 1 emprestado para o usuário 1
-    (2, 2, "2024-08-05", "2024-08-20"),  # Livro 2 emprestado para o usuário 2
-    (3, 3, "2024-08-10", None),  # Livro 3 emprestado para o usuário 3
-    (4, 4, "2024-08-15", None),  # Livro 4 emprestado para o usuário 4
-    (5, 5, "2024-08-20", "2024-09-01"),  # Livro 5 emprestado para o usuário 5
-    (6, 6, "2024-08-25", None),  # Livro 6 emprestado para o usuário 6
-    (7, 7, "2024-09-01", "2024-09-15"),  # Livro 7 emprestado para o usuário 7
-    (8, 8, "2024-09-05", None),  # Livro 8 emprestado para o usuário 8
-    (9, 9, "2024-09-10", None),  # Livro 9 emprestado para o usuário 9
-    (10, 10, "2024-09-15", None),  # Livro 10 emprestado para o usuário 10
+    (1, 1, "2024-08-01", None, "2024-08-11"),  # Livro 1 emprestado para o usuário 1 
+    (2, 2, "2024-07-05", "2024-07-20", "2024-07-15"),  # Livro 2 emprestado para o usuário 2
+    (3, 3, "2024-08-10", None, "2024-08-20"),  # Livro 3 emprestado para o usuário 3
+    (4, 4, "2024-08-15", None, "2024-08-25"),  # Livro 4 emprestado para o usuário 4
+    (5, 5, "2024-06-20", "2024-06-01", "2024-06-30"),  # Livro 5 emprestado para o usuário 5
+    (6, 6, "2024-08-25", None, "2024-09-04"),  # Livro 6 emprestado para o usuário 6
+    (7, 7, "2024-08-01", "2024-08-15", "2024-08-11"),  # Livro 7 emprestado para o usuário 7
+    (8, 8, "2024-08-05", None, "2024-08-15"),  # Livro 8 emprestado para o usuário 8
+    (9, 9, "2024-08-10", None, "2024-08-20"),  # Livro 9 emprestado para o usuário 9
+    (10, 10, "2024-08-15", None, "2024-08-25"),  # Livro 10 emprestado para o usuário 10
 ]
 
 # insere dados na tabela emprestimos
 cursor.executemany(
-    "INSERT INTO emprestimos (livro_id, usuario_id, data_emprestimo, data_devolucao) VALUES (?, ?, ?, ?)",
+    "INSERT INTO emprestimos (livro_id, usuario_id, data_emprestimo, data_devolucao, vencimento_emprestimo) VALUES (?, ?, ?, ?, ?)",
     emprestimos,
 )
 
@@ -175,6 +187,20 @@ for x in livros_emprestados:
 livro_autor = cursor.execute("SELECT titulo FROM livros INNER JOIN autores ON livros.autor_id = autores.autor_id WHERE autores.nome = 'Stephen King';")
 for y in livro_autor:
   print(y)
+
+# Verifica o número de exemplares disponíveis de um determinado livro.
+autor_exemplares = cursor.execute("SELECT titulo, nome AS autor, exemplares FROM livros INNER JOIN autores ON autores.autor_id = livros.autor_id WHERE exemplares > 0 AND titulo = 'O Iluminado';")
+print(autor_exemplares)
+
+#Encontra todos os livros emprestados no momento
+todos_emprestados = cursor.execute("SELECT titulo, nome AS autor, exemplares FROM livros INNER JOIN autores ON autores.autor_id = livros.autor_id WHERE exemplares > 0;")
+for x in todos_emprestados:
+  print(todos_emprestados)
+
+# Mostra todos os emprestimos em atraso e seus usuários
+atrasos = cursor.execute("SELECT * FROM emprestimos NATURAL JOIN usuarios WHERE vencimento_emprestimo < date('now') AND data_devolucao IS NULL")
+for x in atrasos:
+  print(x)
 
 # salva alterações
 conexao.commit()

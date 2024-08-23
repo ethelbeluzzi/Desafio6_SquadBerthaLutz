@@ -66,6 +66,11 @@ cursor.execute(
     )
 """
 )
+# Alteração de tabela livros para adicionar coluna exemplares
+cursor.execute("ALTER TABLE livros ADD exemplares INTEGER")
+
+# Alteração da tabela empréstimos para alterar datas de empréstimo e devolução
+cursor.execute("ALTER TABLE emprestimos ADD vencimento_emprestimo")
 
 # Salvar (commit) as mudanças
 conexao.commit()
@@ -102,21 +107,21 @@ cursor.executemany("INSERT INTO editoras (nome, endereco) VALUES (?, ?)", editor
 
 
 livros = [
-    ("Harry Potter e a Pedra Filosofal", 1, 1, 1997, "Fantasia"),
-    ("A Guerra dos Tronos", 2, 2, 1996, "Fantasia"),
-    ("O Hobbit", 3, 3, 1937, "Fantasia"),
-    ("Assassinato no Expresso do Oriente", 4, 4, 1934, "Mistério"),
-    ("O Apanhador no Campo de Centeio", 5, 2, 1951, "Ficção Literária"),
-    ("Moby Dick", 6, 3, 1851, "Aventura"),
-    ("O Grande Gatsby", 7, 5, 1925, "Romance"),
-    ("Orgulho e Preconceito", 8, 1, 1813, "Romance"),
-    ("As Aventuras de Huckleberry Finn", 9, 2, 1884, "Aventura"),
-    ("O Iluminado", 10, 4, 1977, "Terror"),
+    ("Harry Potter e a Pedra Filosofal", 1, 1, 1997, "Fantasia", 5),
+    ("A Guerra dos Tronos", 2, 2, 1996, "Fantasia", 10),
+    ("O Hobbit", 3, 3, 1937, "Fantasia", 4),
+    ("Assassinato no Expresso do Oriente", 4, 4, 1934, "Mistério", 6),
+    ("O Apanhador no Campo de Centeio", 5, 2, 1951, "Ficção Literária", 9),
+    ("Moby Dick", 6, 3, 1851, "Aventura", 8),
+    ("O Grande Gatsby", 7, 5, 1925, "Romance", 3),
+    ("Orgulho e Preconceito", 8, 1, 1813, "Romance", 6),
+    ("As Aventuras de Huckleberry Finn", 9, 2, 1884, "Aventura", 8),
+    ("O Iluminado", 10, 4, 1977, "Terror", 12),
 ]
 
 # insere livros na tabela livros
 cursor.executemany(
-    "INSERT INTO livros (titulo, autor_id, editora_id, ano_publicacao, genero) VALUES (?, ?, ?, ?, ?)",
+    "INSERT INTO livros (titulo, autor_id, editora_id, ano_publicacao, genero, exemplares) VALUES (?, ?, ?, ?, ?, ?)",
     livros,
 )
 
@@ -156,8 +161,25 @@ cursor.executemany(
     emprestimos,
 )
 
+# --------------------------------------------------------------------------------
+# 3 - CONSULTA DE DADOS
+
+# Encontrar todos os livros emprestados no momento.
+
+livros_emprestados = cursor.execute("SELECT titulo FROM emprestimos INNER JOIN livros ON emprestimos.livro_id = livros.livro_id;")
+for x in livros_emprestados:
+  print(x)
+
+# Localizar os livros escritos por um autor específico.
+
+livro_autor = cursor.execute("SELECT titulo FROM livros INNER JOIN autores ON livros.autor_id = autores.autor_id WHERE autores.nome = 'Stephen King';")
+for y in livro_autor:
+  print(y)
+
 # salva alterações
 conexao.commit()
+
+
 
 # Fecha a conexão
 conexao.close()

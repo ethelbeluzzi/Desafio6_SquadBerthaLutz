@@ -202,6 +202,24 @@ atrasos = cursor.execute("SELECT * FROM emprestimos NATURAL JOIN usuarios WHERE 
 for x in atrasos:
   print(x)
 
+#--------------------------------------
+#4 ATUALIZACOES E EXCLUSOES 
+
+# Atualizar qaunt de exemplares 
+cursor.execute("UPDATE livros SET exemplares = exemplares - 1 WHERE livro_id = 1") 
+
+#Atualizar email 
+cursor.execute("UPDATE usuarios SET email = 'safira.maria@gmail.com' WHERE usuario_id = 4 ")
+#Atualizar genero livro
+cursor.execute("UPDATE SET genero = 'Misterio' WHERE livro_id = 10")
+
+# excluir um autor
+cursor.execute("DELETE FROM  autores WHERE autor_id = 1")
+# excluir emprestimos devolvidos 
+cursor.execute("DELETE FROM emprestimos WHERE data_devolucao IS NOT NULL")
+# Atualizar data de devolucao
+cursor.execute("UPDATE emprestimos SET data_devolucao = '2024-10-06' WHERE emprestimo_id = 2")
+
 # salva alterações
 conexao.commit()
 

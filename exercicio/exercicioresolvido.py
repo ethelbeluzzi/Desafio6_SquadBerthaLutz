@@ -202,6 +202,9 @@ atrasos = cursor.execute("SELECT * FROM emprestimos NATURAL JOIN usuarios WHERE 
 for x in atrasos:
   print(x)
 
+# salva alterações
+conexao.commit()
+
 #--------------------------------------------------------------------------------
 # 4 - EXCLUSÂO DE DADOS
 

@@ -18,3 +18,22 @@ Escreva consultas SQL para realizar as seguintes operações:
 
     ```
 ---
+
+## 4. Atualizações e Exclusões
+
+- [x] Deletar um autor
+     ```sql
+    DELETE FROM autores WHERE autor_id = "Stephen King"
+    ```
+- [x] Deletar uma editora
+     ```sql
+    DELETE FROM editoras WHERE editora_id = "Editora Intrínseca"
+    ```
+- [x] Deletar um livro emprestado
+     ```sql
+    DELETE FROM empretimos WHERE livro_id = "O Apanhador no Campo de Centeio"
+    ```
+- [x] Deletar um livro
+     ```sql
+    DELETE FROM livros WHERE livro_id = "O Apanhador no Campo de Centeio"
+    ```

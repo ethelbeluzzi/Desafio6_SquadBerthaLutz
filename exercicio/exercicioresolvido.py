@@ -205,7 +205,23 @@ for x in atrasos:
 # salva alterações
 conexao.commit()
 
+#--------------------------------------------------------------------------------
+# 4 - EXCLUSÂO DE DADOS
 
+#deletar um autor
+cursor.execute('DELETE FROM autores WHERE autor_id = "Stephen King"')
+
+#deletar uma editora
+cursor.execute('DELETE FROM editoras WHERE editora_id = "Editora Intrínseca"')
+
+#deletando um livro emprestado
+cursor.execute('DELETE FROM empretimos WHERE livro_id = "O Apanhador no Campo de Centeio"')
+
+#deletar um livro
+cursor.execute('DELETE FROM livros WHERE livro_id = "O Apanhador no Campo de Centeio"')
+
+# salva alterações
+conexao.commit()
 
 # Fecha a conexão
 conexao.close()

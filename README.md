@@ -140,4 +140,4 @@ Algumas operações de atualização e exclusão de dados:
 
 ## 🤝 Contribuições
 
-Contribuições são bem-vindas! Sinta-se à vontade para abrir um pull request conform foi construido pela nossa squad.
+Contribuições são bem-vindas! Sinta-se à vontade para abrir um pull request conforme foi construido pela nossa squad.

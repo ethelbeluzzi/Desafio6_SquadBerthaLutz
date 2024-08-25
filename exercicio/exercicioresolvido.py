@@ -35,6 +35,7 @@ cursor.execute(
         editora_id INTEGER,
         ano_publicacao INTEGER,
         genero VARCHAR(50),
+        exemplares INTEGER DEFAULT 1,
         FOREIGN KEY (autor_id) REFERENCES autores(autor_id),
         FOREIGN KEY (editora_id) REFERENCES editoras(editora_id)
     )
@@ -61,17 +62,16 @@ cursor.execute(
         usuario_id INTEGER,
         data_emprestimo DATE NOT NULL,
         data_devolucao DATE,
+        vencimento_emprestimo DATE,
         FOREIGN KEY (livro_id) REFERENCES livros(livro_id),
         FOREIGN KEY (usuario_id) REFERENCES usuarios(usuario_id)
     )
 """
 )
-# Alteração de tabela livros para adicionar coluna exemplares
-cursor.execute("ALTER TABLE livros ADD exemplares INTEGER DEFAULT 1")
 
 # Cria um gatilho para alterar o valor de exemplares (executar apenas uma vez)
 cursor.execute("""
-    CREATE TRIGGER atualizar_exemplares
+    CREATE TRIGGER IF NOT EXISTS atualizar_exemplares
     AFTER INSERT ON emprestimos
     FOR EACH ROW
     BEGIN
@@ -81,12 +81,21 @@ cursor.execute("""
     END;
 """)
 
-# Alteração da tabela empréstimos para alterar datas de empréstimo e devolução
-cursor.execute("ALTER TABLE emprestimos ADD vencimento_emprestimo")
+# Cria um gatilho para atualizar o número de exemplares ao devolver um livro
+cursor.execute("""
+    CREATE TRIGGER IF NOT EXISTS devolver_exemplar
+    AFTER UPDATE OF data_devolucao ON emprestimos
+    FOR EACH ROW
+    WHEN NEW.data_devolucao IS NOT NULL
+    BEGIN
+        UPDATE livros
+        SET exemplares = exemplares + 1
+        WHERE livro_id = NEW.livro_id;
+    END;
+""")
 
 # Salvar (commit) as mudanças
 conexao.commit()
-
 
 # --------------------------------------------------------------------------------
 # 2 - INSERÇÃO DE DADOS
@@ -131,9 +140,13 @@ livros = [
     ("O Iluminado", 10, 4, 1977, "Terror", 12),
 ]
 
-# insere livros na tabela livros
+# Insere livros na tabela livros
 cursor.executemany(
-    "INSERT INTO livros (titulo, autor_id, editora_id, ano_publicacao, genero, exemplares) VALUES (?, ?, ?, ?, ?, ?)",
+    """
+    INSERT INTO livros 
+    (titulo, autor_id, editora_id, ano_publicacao, genero, exemplares) 
+    VALUES (?, ?, ?, ?, ?, ?)
+    """,
     livros,
 )
 
@@ -154,6 +167,7 @@ usuarios = [
 cursor.executemany("INSERT INTO usuarios (nome, email) VALUES (?, ?)", usuarios)
 
 
+# Lista de empréstimos
 emprestimos = [
     (1, 1, "2024-08-01", None, "2024-08-11"),  # Livro 1 emprestado para o usuário 1 
     (2, 2, "2024-07-05", "2024-07-20", "2024-07-15"),  # Livro 2 emprestado para o usuário 2
@@ -167,40 +181,79 @@ emprestimos = [
     (10, 10, "2024-08-15", None, "2024-08-25"),  # Livro 10 emprestado para o usuário 10
 ]
 
-# insere dados na tabela emprestimos
+# Insere dados na tabela emprestimos
 cursor.executemany(
-    "INSERT INTO emprestimos (livro_id, usuario_id, data_emprestimo, data_devolucao, vencimento_emprestimo) VALUES (?, ?, ?, ?, ?)",
+    """
+    INSERT INTO emprestimos 
+    (livro_id, usuario_id, data_emprestimo, data_devolucao, vencimento_emprestimo) 
+    VALUES (?, ?, ?, ?, ?)
+    """,
     emprestimos,
 )
+
+# Salvar (commit) as mudanças após as inserções
+conexao.commit()
+# --------------------------------------------------------------------------------
 
 # --------------------------------------------------------------------------------
 # 3 - CONSULTA DE DADOS
 
-# Encontrar todos os livros emprestados no momento.
-
-livros_emprestados = cursor.execute("SELECT titulo FROM emprestimos INNER JOIN livros ON emprestimos.livro_id = livros.livro_id;")
+# Encontrar todos os livros emprestados no momento
+livros_emprestados = cursor.execute("""
+    SELECT titulo 
+    FROM emprestimos 
+    INNER JOIN livros ON emprestimos.livro_id = livros.livro_id
+    WHERE emprestimos.data_devolucao IS NULL;
+""")
+print("Livros emprestados no momento:")
 for x in livros_emprestados:
-  print(x)
+    print(x)
 
-# Localizar os livros escritos por um autor específico.
-
-livro_autor = cursor.execute("SELECT titulo FROM livros INNER JOIN autores ON livros.autor_id = autores.autor_id WHERE autores.nome = 'Stephen King';")
+# Localizar os livros escritos por um autor específico
+livro_autor = cursor.execute("""
+    SELECT titulo 
+    FROM livros 
+    INNER JOIN autores ON livros.autor_id = autores.autor_id 
+    WHERE autores.nome = 'Stephen King';
+""")
+print("\nLivros escritos por Stephen King:")
 for y in livro_autor:
-  print(y)
+    print(y)
 
-# Verifica o número de exemplares disponíveis de um determinado livro.
-autor_exemplares = cursor.execute("SELECT titulo, nome AS autor, exemplares FROM livros INNER JOIN autores ON autores.autor_id = livros.autor_id WHERE exemplares > 0 AND titulo = 'O Iluminado';")
-print(autor_exemplares)
+# Verificar o número de exemplares disponíveis de um determinado livro
+autor_exemplares = cursor.execute("""
+    SELECT titulo, autores.nome AS autor, exemplares 
+    FROM livros 
+    INNER JOIN autores ON autores.autor_id = livros.autor_id 
+    WHERE exemplares > 0 AND titulo = 'O Iluminado';
+""")
+print("\nExemplares disponíveis de 'O Iluminado':")
+for exemplar in autor_exemplares:
+    print(exemplar)
 
-#Encontra todos os livros emprestados no momento
-todos_emprestados = cursor.execute("SELECT titulo, nome AS autor, exemplares FROM livros INNER JOIN autores ON autores.autor_id = livros.autor_id WHERE exemplares > 0;")
-for x in todos_emprestados:
-  print(todos_emprestados)
+# Encontrar todos os livros emprestados no momento (quando todos os exemplares estão emprestados)
+todos_emprestados = cursor.execute("""
+    SELECT titulo, autores.nome AS autor 
+    FROM livros 
+    INNER JOIN autores ON autores.autor_id = livros.autor_id 
+    WHERE exemplares = 0;
+""")
+print("\nLivros sem exemplares disponíveis (todos emprestados):")
+for livro in todos_emprestados:
+    print(livro)
 
-# Mostra todos os emprestimos em atraso e seus usuários
-atrasos = cursor.execute("SELECT * FROM emprestimos NATURAL JOIN usuarios WHERE vencimento_emprestimo < date('now') AND data_devolucao IS NULL")
-for x in atrasos:
-  print(x)
+# Mostrar todos os empréstimos em atraso e seus usuários
+atrasos = cursor.execute("""
+    SELECT emprestimos.*, usuarios.nome AS usuario_nome, usuarios.email 
+    FROM emprestimos 
+    INNER JOIN usuarios ON emprestimos.usuario_id = usuarios.usuario_id 
+    WHERE vencimento_emprestimo < date('now') 
+    AND data_devolucao IS NULL;
+""")
+print("\nEmpréstimos em atraso e seus usuários:")
+for atraso in atrasos:
+    print(atraso)
+
 
 #--------------------------------------
 #4 ATUALIZACOES E EXCLUSOES 
@@ -211,7 +264,7 @@ cursor.execute("UPDATE livros SET exemplares = exemplares - 1 WHERE livro_id = 1
 #Atualizar email 
 cursor.execute("UPDATE usuarios SET email = 'safira.maria@gmail.com' WHERE usuario_id = 4 ")
 #Atualizar genero livro
-cursor.execute("UPDATE SET genero = 'Misterio' WHERE livro_id = 10")
+cursor.execute("UPDATE livros SET genero = 'Mistério' WHERE livro_id = 10")
 
 # excluir um autor
 cursor.execute("DELETE FROM  autores WHERE autor_id = 1")
@@ -226,20 +279,25 @@ conexao.commit()
 #--------------------------------------------------------------------------------
 # 4 - EXCLUSÂO DE DADOS
 
-#deletar um autor
-cursor.execute('DELETE FROM autores WHERE autor_id = "Stephen King"')
+#deletar um autor pelo nome (primeiro, precisa-se verificar se o autor existe para evitar exceções)
+cursor.execute('DELETE FROM autores WHERE nome = "Stephen King"')
 
-#deletar uma editora
-cursor.execute('DELETE FROM editoras WHERE editora_id = "Editora Intrínseca"')
+#deletar uma editora pelo nome (verificar se a editora existe para evitar exceções)
+cursor.execute('DELETE FROM editoras WHERE nome = "Editora Intrínseca"')
 
-#deletando um livro emprestado
-cursor.execute('DELETE FROM empretimos WHERE livro_id = "O Apanhador no Campo de Centeio"')
+# Deletar um empréstimo específico baseado no ID do livro e título
+# Nota: Isso é feito na tabela `emprestimos`, mas é mais seguro referenciar pelo `emprestimo_id`
+cursor.execute("""
+    DELETE FROM emprestimos 
+    WHERE livro_id = (SELECT livro_id FROM livros WHERE titulo = 'O Apanhador no Campo de Centeio')
+""")
 
-#deletar um livro
-cursor.execute('DELETE FROM livros WHERE livro_id = "O Apanhador no Campo de Centeio"')
+# Deletar um livro pelo título (primeiro, verificar se o livro existe para evitar exceções)
+cursor.execute("DELETE FROM livros WHERE titulo = 'O Apanhador no Campo de Centeio'")
 
-# salva alterações
+# Salvar as alterações no banco de dados
 conexao.commit()
+
 
 # Fecha a conexão
 conexao.close()
